@@ -58,8 +58,23 @@ public class MemorySpace {
 	 * @return the base address of the allocated block, or -1 if unable to allocate
 	 */
 	public int malloc(int length) {		
-		//// Replace the following statement with your code
-		return -1;
+		Node current = freeList.getFirst();
+		while(current != null && current.block.length < length) {
+			current = current.next;
+		}
+		if(current == null){
+			return -1;
+		}
+		MemoryBlock newBlock = new MemoryBlock(current.block.baseAddress, length);
+		if(current.block.length == length) {
+			freeList.remove(current);
+		}
+		else {
+			current.block.baseAddress += length;
+			current.block.length -= length;
+		}
+		allocatedList.addLast(newBlock);
+		return newBlock.baseAddress;
 	}
 
 	/**
@@ -71,7 +86,20 @@ public class MemorySpace {
 	 *            the starting address of the block to freeList
 	 */
 	public void free(int address) {
-		//// Write your code here
+		Node current = allocatedList.getFirst();
+		if(allocatedList.getSize() == 0){
+				throw new IllegalArgumentException(
+						"index must be between 0 and size");
+			}
+		else{
+			while(current.block.baseAddress != address && current != allocatedList.getLast()) {
+				current = current.next;
+			}
+			if (current.block.baseAddress == address) {
+				allocatedList.remove(current.block);
+			freeList.addLast(current.block);
+			}
+		}
 	}
 	
 	/**
@@ -88,7 +116,19 @@ public class MemorySpace {
 	 * In this implementation Malloc does not call defrag.
 	 */
 	public void defrag() {
-		/// TODO: Implement defrag test
-		//// Write your code here
+		for (int i = 0; i < this.freeList.getSize(); i++) {
+			MemoryBlock block = this.freeList.getBlock(i);
+			int sum = block.baseAddress + block.length;
+			ListIterator itr = freeList.iterator();
+			while (itr.hasNext()) {
+				if (itr.current.block.baseAddress == sum) {
+					block.length += itr.current.block.length;
+					this.freeList.remove(itr.current);
+					defrag();
+				}
+				itr.next();
+			}
+		}
+		return;
 	}
 }
